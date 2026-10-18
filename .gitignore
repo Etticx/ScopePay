@@ -1,10 +1,21 @@
-# Python-generated files
+# Original Python starter
 __pycache__/
 *.py[oc]
 build/
 dist/
 wheels/
 *.egg-info
-
-# Virtual environments
 .venv
+
+# Next.js and local runtime data
+node_modules/
+.next/
+out/
+.data/
+*.tsbuildinfo
+.env*
+!.env.example
+.DS_Store
+public/vendor/
+artifacts/
+.scopepay-setup
