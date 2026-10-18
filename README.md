@@ -80,4 +80,4 @@ Tests cover money rounding, approval prerequisites, payment matching, replay pro
 - Hosted URL or complete local setup instructions, plus a public YouTube demonstration under three minutes.
 - Disclose Groq, selected model, PayPal APIs, Bryntum, Radix, Lucide and AI development tools in the submission.
 
-The app is not deployed, the repository is not published, and no live payment is enabled by default.
+The app is not deployed, this project is only for Paypal AI Hackathon, and no live payment is enabled by default.
