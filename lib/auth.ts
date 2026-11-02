@@ -10,13 +10,15 @@ export function equal(a: string, b: string) { const x = Buffer.from(a); const y 
 export async function authorized() {
   if (!process.env.APP_PASSWORD) return process.env.NODE_ENV === "development";
   if (process.env.NODE_ENV === "production" && (process.env.SESSION_SECRET?.length || 0) < 32) return false;
-  const cookie = (await cookies()).get("scopepay_session")?.value || "";
+  return validSession((await cookies()).get("scopepay_session")?.value || "");
+}
+export function sessionValue(expires: string) { return `${expires}.${signature(expires)}`; }
+export function validSession(cookie: string) {
   const [expires, hash] = cookie.split(".");
   return Number(expires) > Date.now() && equal(hash || "", signature(expires || ""));
 }
 export async function createSession() {
-  const expires = String(Date.now() + 24 * 60 * 60 * 1000);
-  (await cookies()).set("scopepay_session", `${expires}.${signature(expires)}`, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 86400 });
+  (await cookies()).set("scopepay_session", sessionValue(String(Date.now() + 24 * 60 * 60 * 1000)), { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 86400 });
 }
 export function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");

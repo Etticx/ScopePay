@@ -12,7 +12,7 @@ export type Project = {
   scope: string; rate: number; budget: number; deadline: string; createdAt: string;
   tasks: Task[];
 };
-export type Task = { id: string; name: string; start: string; days: number; progress: number; dependency?: string; proposalId?: string };
+export type Task = { id: string; name: string; start: string; days: number; progress: number; dependency?: string; proposalId?: string; locked?: boolean };
 export type ScopeRequest = { id: string; projectId: string; message: string; items: AnalysisItem[]; engine: "demo" | "groq"; createdAt: string };
 export type ProposalStatus = "draft" | "shared" | "approved" | "declined" | "revision_requested" | "paid";
 export type Proposal = {
@@ -20,9 +20,9 @@ export type Proposal = {
   hours: number; rate: number; totalCents: number; extraDays: number;
   deadline: string; status: ProposalStatus; version: number; token: string;
   mode: "demo" | "sandbox"; createdAt: string; approvedAt?: string; paidAt?: string;
-  invoiceId?: string; orderId?: string; paymentUrl?: string; invoiceError?: string; clientNote?: string; scheduleReview?: boolean;
+  orderId?: string; paymentAttempt?: number; paymentUrl?: string; invoiceError?: string; clientNote?: string; scheduleReview?: boolean;
 };
 export type Activity = { id: string; text: string; at: string; kind: "project" | "request" | "proposal" | "payment" };
 export type Workspace = { projects: Project[]; requests: ScopeRequest[]; proposals: Proposal[]; activity: Activity[]; events: string[] };
 export type IntegrationStatus = { groq: boolean; paypal: boolean; webhook: boolean; protected: boolean };
-export type PublicProposal = { proposal: Omit<Proposal, "token">; project: Pick<Project, "name" | "client" | "deadline"> };
+export type PublicProposal = { proposal: Omit<Proposal, "token">; project: Pick<Project, "name" | "client" | "deadline" | "tasks"> };

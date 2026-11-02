@@ -1,18 +1,16 @@
 import { z } from "zod";
-import { transaction } from "@/lib/store";
+import { snapshot, transaction } from "@/lib/store";
 import { sameOrigin } from "@/lib/auth";
 import { ensurePayment } from "@/lib/checkout";
 type Context = { params: Promise<{ token: string }> };
 export async function GET(_request: Request, context: Context) {
   const { token } = await context.params;
-  const result = await transaction(w => {
-    const p = w.proposals.find(p => p.token === token && p.status !== "draft");
-    const project = w.projects.find(project => project.id === p?.projectId);
-    if (!p || !project) return null;
-    const { token: _secret, ...proposal } = p;
-    return { proposal, project: { name: project.name, client: project.client, deadline: project.deadline } };
-  });
-  return result ? Response.json(result, { headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } }) : Response.json({ error: "This proposal link is unavailable or has been replaced by a newer version." }, { status: 404 });
+  const w = await snapshot();
+  const p = w.proposals.find(p => p.token === token && p.status !== "draft");
+  const project = w.projects.find(project => project.id === p?.projectId);
+  if (!p || !project) return Response.json({ error: "This proposal link is unavailable or has been replaced by a newer version." }, { status: 404 });
+  const { token: _secret, ...proposal } = p;
+  return Response.json({ proposal, project: { name: project.name, client: project.client, deadline: project.deadline, tasks: project.tasks } }, { headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
 }
 export async function POST(request: Request, context: Context) {
   try {
@@ -30,7 +28,7 @@ export async function POST(request: Request, context: Context) {
     });
     let notice = "";
     if (input.decision === "approve" && id.mode === "sandbox") {
-      try { await ensurePayment(id.id, process.env.APP_URL || new URL(request.url).origin); } catch { notice = "Approval saved. Your freelancer will retry preparing PayPal payment."; }
+      try { await ensurePayment(id.id, process.env.APP_URL || new URL(request.url).origin); } catch { notice = "Approved. Payment link pending."; }
     }
     return Response.json({ ok: true, notice });
   } catch (error) { return Response.json({ error: (error as Error).message }, { status: 400 }); }

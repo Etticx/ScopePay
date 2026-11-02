@@ -28,3 +28,11 @@ An initial checkout test imported the file store before setting its temporary DA
 ## Remaining submission work
 
 Public source publication, hosted deployment, appropriately licensed Bryntum access through judging, a broader human-reviewed model evaluation set, submission text and demonstration video remain separate tasks. Mobile CSS breakpoints are implemented; the available in-app browser did not apply a requested narrow viewport override, so mobile-device visual verification is not claimed.
+
+## Audit fixes, 2 November 2026
+
+The legacy invoice path was removed; all stored invoice proposals were already paid, and their records remain readable. Twenty-three automated tests now pass with mocked PayPal responses, including new route, session, webhook and login-limit tests. TypeScript and the production build pass. The locked timeline and new copy were checked in headless Chrome in demo mode only. Phone width (390px) was checked in headless Chrome with no sideways page overflow.
+
+Correction: the section above is out of date. Local records show a $1 sandbox Checkout order paid and scheduled on 18 October 2026, on the code before this audit.
+
+Live checks on the current code: the Groq smoke test passed with the configured model, and a real sandbox order was created and approved on temporary data. Completing that payment needs the user's sandbox buyer login, so capture on the current code stays pending until the user pays it.

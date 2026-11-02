@@ -1,4 +1,4 @@
-import type { Project, Proposal, Workspace } from "./types";
+import type { Project, Proposal, Task, Workspace } from "./types";
 
 export function amountCents(hours: number, rate: number) {
   if (!Number.isFinite(hours) || !Number.isFinite(rate) || hours <= 0 || rate <= 0) throw new Error("Enter positive hours and an hourly rate.");
@@ -18,6 +18,22 @@ export function dateLabel(date: string) {
 export function projectContext(workspace: Workspace, project: Project) {
   return [project.scope, ...workspace.proposals.filter(p => p.projectId === project.id && p.status === "paid").map(p => `Approved and paid addition: ${p.title}. ${p.description}`)].join("\n\n");
 }
+type PlannedChange = Pick<Proposal, "id" | "title" | "extraDays" | "deadline">;
+export function scheduleStale(project: Pick<Project, "deadline">, proposal: PlannedChange, today = new Date().toISOString().slice(0, 10)) {
+  return today > project.deadline || addDays(project.deadline, proposal.extraDays) !== proposal.deadline;
+}
+function changeTask(project: Pick<Project, "deadline" | "tasks">, proposal: PlannedChange): Task {
+  // With no extension, the one-day task must finish on the deadline, not after it.
+  const start = proposal.extraDays ? project.deadline : addDays(project.deadline, -1);
+  return { id: `change-${proposal.id}`, name: proposal.title, start, days: Math.max(1, proposal.extraDays), progress: 0, dependency: project.tasks.at(-1)?.id, proposalId: proposal.id };
+}
+// What the timeline will gain once paid: a payment milestone gating the locked work.
+export function lockedTasks(project: Pick<Project, "deadline" | "tasks">, proposal: PlannedChange): Task[] {
+  if (scheduleStale(project, proposal)) return [];
+  const task = changeTask(project, proposal);
+  const payment = `payment-${proposal.id}`;
+  return [{ id: payment, name: "Payment", start: task.start, days: 0, progress: 0, dependency: task.dependency }, { ...task, dependency: payment, locked: true }];
+}
 export function activatePaid(workspace: Workspace, proposal: Proposal, eventId: string, today = new Date().toISOString().slice(0, 10)) {
   if (workspace.events.includes(eventId) || proposal.status === "paid") return false;
   if (proposal.status !== "approved") throw new Error("Payment must match a client-approved proposal.");
@@ -25,10 +41,9 @@ export function activatePaid(workspace: Workspace, proposal: Proposal, eventId: 
   if (!project) throw new Error("Project not found.");
   proposal.status = "paid";
   proposal.paidAt = new Date().toISOString();
-  proposal.scheduleReview = today > project.deadline || addDays(project.deadline, proposal.extraDays) !== proposal.deadline;
+  proposal.scheduleReview = scheduleStale(project, proposal, today);
   if (!proposal.scheduleReview) {
-    const start = project.deadline;
-    project.tasks.push({ id: `change-${proposal.id}`, name: proposal.title, start, days: Math.max(1, proposal.extraDays), progress: 0, dependency: project.tasks.at(-1)?.id, proposalId: proposal.id });
+    project.tasks.push(changeTask(project, proposal));
     project.deadline = addDays(project.deadline, proposal.extraDays);
   }
   workspace.events.push(eventId);

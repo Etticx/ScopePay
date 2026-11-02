@@ -8,10 +8,12 @@ const jsonSchema = { type: "object", additionalProperties: false, required: ["it
 
 export function validateEvidence(items: AnalysisItem[], context: string) {
   return items.map(item => {
-    if (item.classification !== "clarify" && (!item.evidence.trim() || !context.includes(item.evidence))) {
+    // A very short "quote" appears in almost any scope, so it proves nothing.
+    const verified = item.evidence.trim().length >= 20 && context.includes(item.evidence);
+    if (item.classification !== "clarify" && !verified) {
       return { ...item, classification: "clarify" as const, hours: 0, evidence: "", reason: "A supporting quotation could not be verified in the saved scope. Please review this request.", question: "Can you clarify how this request relates to the agreed deliverables?" };
     }
-    return { ...item, hours: item.classification === "additional" ? item.hours : 0 };
+    return { ...item, evidence: verified ? item.evidence : "", hours: item.classification === "additional" ? item.hours : 0 };
   });
 }
 export async function analyze(context: string, message: string): Promise<{ items: AnalysisItem[]; engine: "groq" | "demo" }> {

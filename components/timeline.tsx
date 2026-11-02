@@ -1,15 +1,17 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { addDays } from "@/lib/domain";
-import type { Project } from "@/lib/types";
+import type { Project, Task } from "@/lib/types";
 import { Spinner } from "./ui";
 
-export default function Timeline({ project }: { project: Project }) {
+export default function Timeline({ project, locked = [] }: { project: Pick<Project, "tasks" | "deadline">; locked?: Task[] }) {
+  const tasks = [...project.tasks, ...locked];
+  const end = tasks.map(t => addDays(t.start, t.days)).concat(project.deadline).sort().at(-1)!;
   const target = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   useEffect(() => {
-    let chart: { destroy: () => void } | undefined;
+    let chart: { destroy: () => void; zoomToFit: () => void; project: { commitAsync: () => Promise<unknown> } } | undefined;
     let disposed = false;
     setLoading(true); setError("");
     const assetRoot = "/vendor/bryntum";
@@ -22,24 +24,26 @@ export default function Timeline({ project }: { project: Project }) {
     const moduleUrl = `${assetRoot}/gantt.module.js`;
     Promise.all([Promise.all(stylesReady), import(/* webpackIgnore: true */ moduleUrl)]).then(([, { Gantt }]) => {
       if (disposed || !target.current) return;
-      const start = project.tasks.map(t => t.start).sort()[0] || project.deadline;
+      const start = tasks.map(t => t.start).sort()[0] || project.deadline;
       chart = new Gantt({
-        appendTo: target.current, height: 390, readOnly: true,
+        appendTo: target.current, height: 110 + tasks.length * 54, readOnly: true,
         rowHeight: 54, barMargin: 15, viewPreset: "weekAndDayLetter",
-        startDate: addDays(start, -1), endDate: addDays(project.deadline, 3),
-        columns: [{ type: "name", text: "Project tasks", width: 230 }],
-        features: { taskEdit: false, taskMenu: false, cellEdit: false },
+        startDate: addDays(start, -1), endDate: addDays(end, 3),
+        columns: [{ type: "name", text: "Tasks", width: 220 }],
+        features: { taskEdit: false, taskMenu: false, cellEdit: false, projectLines: false },
         project: {
           startDate: start,
           calendar: "all-days",
           calendars: [{ id: "all-days", name: "Calendar days", unspecifiedTimeIsWorking: true }],
-          tasks: project.tasks.map(t => ({ id: t.id, name: t.name, startDate: t.start, duration: t.days, durationUnit: "day", percentDone: t.progress, manuallyScheduled: true, eventColor: t.proposalId ? "green" : "blue" })),
-          dependencies: project.tasks.filter(t => t.dependency).map(t => ({ fromTask: t.dependency, toTask: t.id, type: 2 })),
+          tasks: tasks.map(t => ({ id: t.id, name: t.name, startDate: t.start, duration: t.days, durationUnit: "day", percentDone: t.progress, manuallyScheduled: true, eventColor: t.locked ? "gray" : t.days === 0 ? "orange" : t.proposalId ? "green" : "blue", iconCls: t.locked ? "fa fa-lock" : undefined })),
+          dependencies: tasks.filter(t => t.dependency).map(t => ({ fromTask: t.dependency, toTask: t.id, type: 2 })),
         },
       });
+      // Show the whole plan, so locked work is never scrolled out of view.
+      void chart!.project.commitAsync().then(() => { if (!disposed) chart?.zoomToFit(); });
       setLoading(false);
     }).catch(() => { if (!disposed) { setError("The Bryntum timeline could not load. Check the trial installation and refresh."); setLoading(false); } });
     return () => { disposed = true; chart?.destroy(); };
-  }, [project]);
-  return <div className="timeline-wrap">{loading && <div className="loading-inline"><Spinner /> Loading your timeline…</div>}{error && <p role="alert" className="form-error">{error}</p>}<div ref={target} /><div className="timeline-caption"><span><span className="legend-line" /> Agreed project tasks</span><span><span className="legend-line green-line" /> Paid additions</span><span className="muted">Bryntum Gantt · evaluation</span></div></div>;
+  }, [JSON.stringify(tasks), project.deadline]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <div className="timeline-wrap">{loading && <div className="loading-inline"><Spinner /> Loading…</div>}{error && <p role="alert" className="form-error">{error}</p>}<div ref={target} /><div className="timeline-caption"><span><span className="legend-line" /> Agreed tasks</span><span><span className="legend-line green-line" /> Paid</span>{locked.length > 0 && <span><span className="legend-line gray-line" /> Locked until paid</span>}</div></div>;
 }

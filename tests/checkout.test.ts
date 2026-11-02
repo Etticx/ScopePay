@@ -39,7 +39,7 @@ test("checkout lifecycle reuses the order, rejects forged callbacks, captures on
   const { transaction } = await import("../lib/store");
   const { ensurePayment, confirmPayment } = await import("../lib/checkout");
   let created = 0; let captured = 0; let status = "CREATED";
-  let loseCaptureResponse = false;
+  let loseCaptureResponse = false; let orderExpired = false; const requestIds: string[] = [];
   const p = proposal(); delete p.orderId;
   globalThis.fetch = async (input, init) => {
     const url = String(input);
@@ -49,9 +49,12 @@ test("checkout lifecycle reuses the order, rejects forged callbacks, captures on
       const body = JSON.parse(String(init.body));
       assert.equal(body.payment_source.paypal.experience_context.return_url, `http://127.0.0.1:3000/client/${p.token}?checkout=return`);
       assert.equal(body.purchase_units[0].amount.value, "1.00");
+      requestIds.push((init.headers as Record<string, string>)["PayPal-Request-Id"]);
+      orderExpired = false;
       return Response.json({ id: "ORDER-TEST", links: [{ rel: "payer-action", href: "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-TEST" }] });
     }
-    if (url.endsWith("/ORDER-TEST/capture")) { captured++; status = "COMPLETED"; assert.equal((init?.headers as Record<string, string>)["PayPal-Request-Id"], "capture-checkout-test-v1"); if (loseCaptureResponse) throw new Error("Capture response lost"); return Response.json({ status }); }
+    if (url.endsWith("/ORDER-TEST/capture")) { captured++; status = "COMPLETED"; assert.equal((init?.headers as Record<string, string>)["PayPal-Request-Id"], "capture-ORDER-TEST"); if (loseCaptureResponse) throw new Error("Capture response lost"); return Response.json({ status }); }
+    if (url.endsWith("/ORDER-TEST") && orderExpired) return Response.json({ name: "RESOURCE_NOT_FOUND" }, { status: 404 });
     if (url.endsWith("/ORDER-TEST")) return Response.json(order({ ...p, orderId: "ORDER-TEST" }, status));
     throw new Error(`Unexpected test request: ${url}`);
   };
@@ -59,6 +62,10 @@ test("checkout lifecycle reuses the order, rejects forged callbacks, captures on
     await transaction(w => { Object.assign(w, seed()); w.proposals.push(p); });
     await ensurePayment(p.id, "http://127.0.0.1:3000"); await ensurePayment(p.id, "http://127.0.0.1:3000");
     assert.equal(created, 1);
+    // An expired order is replaced, and the new one must not replay the old request ID.
+    orderExpired = true;
+    await ensurePayment(p.id, "http://127.0.0.1:3000");
+    assert.equal(created, 2); assert.notEqual(requestIds[0], requestIds[1]);
     assert.equal(await confirmPayment(p.id), false);
     await assert.rejects(confirmPayment(p.id, "WRONG-ORDER"), /does not belong/);
     assert.equal(captured, 0);
