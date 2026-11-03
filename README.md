@@ -16,7 +16,7 @@ Open http://127.0.0.1:3000. The development server binds to loopback.
 If Windows reports `listen EACCES` on port 3000, the port is in a range reserved by Windows. Use another port, and point `APP_URL` at it so origin checks and PayPal return links still match:
 
 ```powershell
-$env:APP_URL="http://127.0.0.1:3333"; npm run dev -- -p 3333
+$env:PORT="3333"; $env:APP_URL="http://127.0.0.1:3333"; npm run dev
 ```
  Demo data is created on first access and persists in `.data/workspace.json`. This file is private and ignored by Git.
 
