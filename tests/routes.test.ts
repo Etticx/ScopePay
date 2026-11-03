@@ -74,6 +74,20 @@ test("a webhook with a bad signature changes nothing", async () => {
     assert.equal((await snapshot()).proposals.find(p => p.id === "route-test")?.status, "approved");
   } finally { globalThis.fetch = originalFetch; delete process.env.PAYPAL_WEBHOOK_ID; }
 });
+test("a verified capture webhook marks the matching proposal paid", async () => {
+  const { snapshot, transaction } = await setup();
+  await transaction(w => { const p = w.proposals.find(p => p.id === "route-test")!; p.status = "approved"; p.mode = "sandbox"; p.orderId = "ORDER-HOOK"; });
+  const originalFetch = globalThis.fetch;
+  process.env.PAYPAL_WEBHOOK_ID = "test-webhook"; process.env.PAYPAL_SELLER_EMAIL = "seller@business.example.com";
+  const order = { id: "ORDER-HOOK", intent: "CAPTURE", status: "COMPLETED", purchase_units: [{ reference_id: "route-test", custom_id: "route-test:v2", payee: { email_address: "seller@business.example.com" }, amount: { currency_code: "USD", value: "1.00" }, payments: { captures: [{ id: "CAPTURE", status: "COMPLETED", final_capture: true, amount: { currency_code: "USD", value: "1.00" } }] } }] };
+  globalThis.fetch = async input => { const u = String(input); return Response.json(u.endsWith("/oauth2/token") ? { access_token: "test" } : u.endsWith("/verify-webhook-signature") ? { verification_status: "SUCCESS" } : order); };
+  try {
+    const { POST } = await import("../app/api/paypal/webhook/route");
+    const response = await POST(post({ id: "EVENT-OK", event_type: "PAYMENT.CAPTURE.COMPLETED", resource: { id: "CAPTURE", supplementary_data: { related_ids: { order_id: "ORDER-HOOK" } } } }));
+    assert.equal(response.status, 200);
+    assert.equal((await snapshot()).proposals.find(p => p.id === "route-test")?.status, "paid");
+  } finally { globalThis.fetch = originalFetch; delete process.env.PAYPAL_WEBHOOK_ID; delete process.env.PAYPAL_SELLER_EMAIL; }
+});
 test("login attempts are limited even when x-forwarded-for keeps changing, and bad JSON is a normal rejection", async () => {
   process.env.APP_PASSWORD = "correct-password";
   const { POST } = await import("../app/api/auth/route");

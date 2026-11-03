@@ -13,9 +13,10 @@ export async function POST(request: Request) {
     let result: unknown;
     if (data.action === "createProject") {
       const input = z.object({ name: z.string().trim().min(3).max(100), client: z.string().trim().min(2).max(100), email: z.email(), scope: z.string().trim().min(40).max(24000), rate: z.number().positive().max(10000), budget: z.number().positive().max(1000000), deadline: z.iso.date() }).parse(data);
-      if (input.deadline < new Date().toISOString().slice(0, 10)) throw new Error("Choose a future delivery date.");
+      const today = new Date().toISOString().slice(0, 10);
+      if (input.deadline < today) throw new Error("Choose a future delivery date.");
       result = await transaction(w => {
-        const project = { ...input, id: randomUUID().slice(0, 12), initials: input.name.split(/\s+/).slice(0, 2).map(s => s[0]).join("").toUpperCase(), createdAt: new Date().toISOString(), tasks: [{ id: randomUUID().slice(0, 12), name: "Agreed project delivery", start: new Date().toISOString().slice(0, 10), days: Math.max(1, Math.round((Date.parse(input.deadline) - Date.now()) / 86400000)), progress: 0 }] };
+        const project = { ...input, id: randomUUID().slice(0, 12), initials: input.name.split(/\s+/).slice(0, 2).map(s => s[0]).join("").toUpperCase(), createdAt: new Date().toISOString(), tasks: [{ id: randomUUID().slice(0, 12), name: "Agreed project delivery", start: today, days: Math.max(1, Math.round((Date.parse(input.deadline) - Date.parse(today)) / 86400000)), progress: 0 }] };
         w.projects.unshift(project);
         w.activity.unshift({ id: randomUUID(), text: `Project scope saved · ${project.name}`, at: project.createdAt, kind: "project" });
         return project;

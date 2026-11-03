@@ -1,23 +1,27 @@
-import { transaction } from "./store";
+import { snapshot, transaction } from "./store";
 import { activatePaid } from "./domain";
 import { captureOrder, createOrder, orderGone, verifyPaid } from "./paypal";
 
 export async function ensurePayment(id: string, origin: string) {
   try {
-    await transaction(async w => {
-      const p = w.proposals.find(p => p.id === id);
-      if (!p || p.status !== "approved" || p.mode !== "sandbox") throw new Error("Only an approved sandbox proposal can be paid.");
-      const project = w.projects.find(project => project.id === p.projectId)!;
-      if (project.email.toLowerCase() === process.env.PAYPAL_SELLER_EMAIL?.toLowerCase()) throw new Error("Use a separate sandbox Personal buyer email for the client. The business seller cannot pay itself.");
-      if (p.orderId && await orderGone(p.orderId)) {
-        delete p.orderId; delete p.paymentUrl;
-        p.paymentAttempt = (p.paymentAttempt || 0) + 1;
-      }
-      if (!p.orderId) {
-        const order = await createOrder(p, origin);
-        p.orderId = order.id; p.paymentUrl = order.url;
-      }
-      delete p.invoiceError;
+    const w = await snapshot();
+    const p = w.proposals.find(p => p.id === id);
+    if (!p || p.status !== "approved" || p.mode !== "sandbox") throw new Error("Only an approved sandbox proposal can be paid.");
+    const project = w.projects.find(project => project.id === p.projectId)!;
+    if (project.email.toLowerCase() === process.env.PAYPAL_SELLER_EMAIL?.toLowerCase()) throw new Error("Use a separate sandbox Personal buyer email for the client. The business seller cannot pay itself.");
+    // PayPal calls run outside the save queue so a slow sandbox cannot stall other saves.
+    // A concurrent call reuses the same PayPal-Request-Id, so it gets the same order back.
+    let attempt = p.paymentAttempt || 0;
+    let order: { id: string; url: string } | undefined;
+    if (!p.orderId || await orderGone(p.orderId)) {
+      if (p.orderId) attempt++;
+      order = await createOrder({ ...p, paymentAttempt: attempt }, origin);
+    }
+    await transaction(w => {
+      const current = w.proposals.find(item => item.id === id);
+      if (!current || current.status !== "approved" || current.version !== p.version || (current.orderId !== p.orderId && current.orderId !== order?.id)) throw new Error("This proposal changed while preparing payment. Retry.");
+      if (order) { current.orderId = order.id; current.paymentUrl = order.url; current.paymentAttempt = attempt; }
+      delete current.invoiceError;
     });
   } catch (error) {
     await transaction(w => { const p = w.proposals.find(p => p.id === id); if (p?.status === "approved" && !p.paymentUrl) p.invoiceError = (error as Error).message; });
