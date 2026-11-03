@@ -11,7 +11,7 @@ export default function Timeline({ project, locked = [] }: { project: Pick<Proje
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   useEffect(() => {
-    let chart: { destroy: () => void; zoomToFit: () => void; project: { commitAsync: () => Promise<unknown> } } | undefined;
+    let chart: { destroy: () => void } | undefined;
     let disposed = false;
     setLoading(true); setError("");
     const assetRoot = "/vendor/bryntum";
@@ -27,23 +27,23 @@ export default function Timeline({ project, locked = [] }: { project: Pick<Proje
       const start = tasks.map(t => t.start).sort()[0] || project.deadline;
       chart = new Gantt({
         appendTo: target.current, height: 110 + tasks.length * 54, readOnly: true,
-        rowHeight: 54, barMargin: 15, viewPreset: "weekAndDayLetter",
+        // forceFit stretches ticks to the width; zoomToFit stops at the preset's minimum tick and leaves locked work off-screen.
+        rowHeight: 54, barMargin: 15, viewPreset: "weekAndDayLetter", forceFit: true,
         startDate: addDays(start, -1), endDate: addDays(end, 3),
-        columns: [{ type: "name", text: "Tasks", width: 220 }],
+        columns: [{ type: "name", text: "Tasks", width: target.current.clientWidth < 600 ? 130 : 250 }],
         features: { taskEdit: false, taskMenu: false, cellEdit: false, projectLines: false },
         project: {
           startDate: start,
           calendar: "all-days",
           calendars: [{ id: "all-days", name: "Calendar days", unspecifiedTimeIsWorking: true }],
-          tasks: tasks.map(t => ({ id: t.id, name: t.name, startDate: t.start, duration: t.days, durationUnit: "day", percentDone: t.progress, manuallyScheduled: true, eventColor: t.locked ? "gray" : t.days === 0 ? "orange" : t.proposalId ? "green" : "blue", iconCls: t.locked ? "fa fa-lock" : undefined })),
+          tasks: tasks.map(t => ({ id: t.id, name: t.name, startDate: t.start, duration: t.days, durationUnit: "day", percentDone: t.progress, manuallyScheduled: true, // Brand colours, kept in step with the legend swatches in globals.css.
+            eventColor: t.locked ? "#b9bfb6" : t.days === 0 ? "#c98a3d" : t.proposalId ? "#34664c" : "#7d9cb8", iconCls: t.locked ? "fa fa-lock" : undefined })),
           dependencies: tasks.filter(t => t.dependency).map(t => ({ fromTask: t.dependency, toTask: t.id, type: 2 })),
         },
       });
-      // Show the whole plan, so locked work is never scrolled out of view.
-      void chart!.project.commitAsync().then(() => { if (!disposed) chart?.zoomToFit(); });
       setLoading(false);
     }).catch(() => { if (!disposed) { setError("The Bryntum timeline could not load. Check the trial installation and refresh."); setLoading(false); } });
     return () => { disposed = true; chart?.destroy(); };
   }, [JSON.stringify(tasks), project.deadline]); // eslint-disable-line react-hooks/exhaustive-deps
-  return <div className="timeline-wrap">{loading && <div className="loading-inline"><Spinner /> Loading…</div>}{error && <p role="alert" className="form-error">{error}</p>}<div ref={target} /><div className="timeline-caption"><span><span className="legend-line" /> Agreed tasks</span><span><span className="legend-line green-line" /> Paid</span>{locked.length > 0 && <span><span className="legend-line gray-line" /> Locked until paid</span>}</div></div>;
+  return <div className="timeline-wrap">{loading && <div className="loading-inline"><Spinner /> Loading…</div>}{error && <p role="alert" className="form-error">{error}</p>}<div ref={target} /><div className="timeline-caption"><span><span className="legend-line" /> Agreed tasks</span><span><span className="legend-line green-line" /> Paid</span>{locked.length > 0 && <><span><span className="legend-line amber-line" /> Payment</span><span><span className="legend-line gray-line" /> Locked until paid</span></>}</div></div>;
 }

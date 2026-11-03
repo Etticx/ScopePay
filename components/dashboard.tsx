@@ -685,7 +685,7 @@ export default function Dashboard() {
                         </strong>
                         <span>
                           <Clock3 size={15} />
-                          {p.hours} hours
+                          {p.hours} {p.hours === 1 ? "hour" : "hours"}
                         </span>
                         <span>
                           <CalendarDays size={15} />

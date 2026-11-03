@@ -8,6 +8,13 @@
 /* Keep secondary information readable without adding visual noise. */
 .nav-item{font-size:13px}.project-card h3{font-size:15px}.project-card>.small{font-size:12px}.project-card-top .badge{font-size:10px}.project-meta{font-size:11px}.project-progress>div:first-child{font-size:10px}.request-row strong{font-size:13px}.request-row .small{font-size:11px}.request-row .badge{font-size:10px}.project-grid .badge.neutral{color:#738269}.page-heading p{color:#788371}.eyebrow{color:#758567}.badge{font-size:11px}.mode-pill{font-size:11px}.connection-card code{font-size:11px}.field>span{font-size:12px}.field input,.field select,.field textarea{font-size:13px}.proposal-facts>span:not(.badge){font-size:12px}.timeline-caption{font-size:11px}.timeline-caption>.muted{font-size:10px}
 @media(max-width:480px){.project-card h3{font-size:15px}.project-card>.small{font-size:12px}.request-row strong{font-size:13px}.mode-pill{font-size:10px}}
+/* Readability floor: no text under 11px, and secondary greys that pass WCAG AA on the page background. */
+:root{--muted:#646e68}
+.eyebrow,.page-heading .eyebrow,.proposal-card .eyebrow,.client-card .eyebrow,.client-main>.eyebrow{font-size:11px;color:#5f6f58}
+.client-totals .small,.client-totals strong small,.proposal-facts small,.count-label,.nav-count,.project-card-top .badge,.request-row .badge,.review-reminder,.form-footer>.muted,.sample-buttons button,.sample-buttons .small,.share-preview .small,.setup-note .small,.client-secondary .button,.client-secondary .text-button,.approved-state>.text-button,.check-label,.client-footnote,.client-footer,.timeline-caption,.timeline-caption>.muted,.evidence>span,.evidence p,.clarification .text-button,.login-card>.small{font-size:11px!important}
+.timeline-caption,.client-footnote,.client-footer,.check-label,.proposal-facts small,.project-meta,.scope-meta,.evidence p,.evidence>span{color:#66705f}
+.client-footer span{color:#4f6545}
+.legend-line{background:#7d9cb8}.green-line{background:#34664c}.gray-line{background:#b9bfb6}.amber-line{background:#c98a3d}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition:none!important;scroll-behavior:auto!important}}
 
 /* A quieter workspace: concise navigation and flat overview lists. */
