@@ -18,6 +18,12 @@ If Windows reports `listen EACCES` on port 3000, the port is in a range reserved
 ```powershell
 $env:PORT="3333"; $env:APP_URL="http://127.0.0.1:3333"; npm run dev
 ```
+
+On macOS or Linux:
+
+```sh
+PORT=3333 APP_URL=http://127.0.0.1:3333 npm run dev
+```
  Demo data is created on first access and persists in `.data/workspace.json`. This file is private and ignored by Git.
 
 ## Try the complete demo
@@ -54,7 +60,7 @@ There is no custom model training or vector database in this version. Agreements
 
 Verification checks webhook signatures (when using webhooks), the authoritative order, proposal reference/version, amount, USD currency, and completed payment status. Orders require the configured seller and a completed final capture. A return URL alone never proves payment. Capture request IDs and workflow activation are idempotent. Repeated callbacks and webhook events do not add duplicate work. Capture only runs from the client page, after the buyer has approved checkout on PayPal.
 
-Approvals are tied to an exact proposal version. Shared/approved proposals are locked. A client requesting revisions permits a new draft; saving it rotates the private link and increments the version. If the schedule has moved or payment comes after the existing deadline, payment is recorded but tasks are held for manual schedule reconfirmation; this version flags the issue rather than silently changing an accepted date.
+Approvals are tied to an exact proposal version. Shared/approved proposals are locked. A client requesting revisions permits a new draft; saving it rotates the private link and increments the version. If the schedule has moved since a proposal was priced, the client cannot approve it and is asked to request a revision. If a payment still arrives after the schedule moved (for example, two changes approved together), it is recorded but held for review rather than silently changing an accepted date; the owner can then use **Add to end of timeline** to schedule it after the current deadline.
 
 ## Bryntum and open-source design
 
