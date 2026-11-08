@@ -6,6 +6,8 @@ export type AnalysisItem = {
   evidence: string;
   question: string;
   hours: number;
+  // Missing on requests saved before AI suggested extra days.
+  days?: number;
 };
 export type Project = {
   id: string; name: string; client: string; email: string; initials: string;

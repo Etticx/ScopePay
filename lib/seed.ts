@@ -14,7 +14,7 @@ export function seed(): Workspace {
         tasks: [{ id: "s1", name: "Portfolio design", start: addDays(today, 3), days: 5, progress: 25 }, { id: "s2", name: "Build & launch", start: addDays(today, 8), days: 11, progress: 0, dependency: "s1" }] },
     ],
     requests: [{ id: "r-sample", projectId: "p-bloom", message: "Could we add a page where customers can book a cake tasting?", engine: "demo", createdAt: now,
-      items: [{ title: "Cake tasting booking", classification: "additional", reason: "Appointment booking is explicitly excluded from the agreed website scope.", evidence: "Online ordering, appointment booking, additional languages, and payment processing are explicitly excluded.", question: "", hours: 4 }] }],
+      items: [{ title: "Cake tasting booking", classification: "additional", reason: "Appointment booking is explicitly excluded from the agreed website scope.", evidence: "Online ordering, appointment booking, additional languages, and payment processing are explicitly excluded.", question: "", hours: 4, days: 3 }] }],
     proposals: [], events: [],
     activity: [{ id: "a1", text: "New request received · Bloom Bakery website", at: now, kind: "request" }, { id: "a2", text: "Project scope saved · Studio North portfolio", at: now, kind: "project" }, { id: "a3", text: "Welcome to your demo workspace", at: now, kind: "project" }],
   };
