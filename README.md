@@ -44,16 +44,38 @@ PORT=3333 APP_URL=http://127.0.0.1:3333 npm run dev
 ```
 </details>
 
-## Try the demo (2 minutes)
+## Try the demo (about 2 minutes)
 
-1. **Client requests → New request**, pick **Bloom Bakery**, choose the **Extra feature** example and review it.
-2. **Prepare proposal**, check the price and extra days, save.
-3. **Proposals → Share with client → Client link** opens the client's page.
-4. On the client page, tick the agreement box and **Approve**.
-5. Back in **Proposals**, click **Simulate demo payment**.
-6. Open **Timeline**: the paid change now appears on the Gantt chart.
+In the demo you play both sides: **you** are a freelance web designer building a website for Bloom Bakery, and partway through you also act as **your client**, Sofia.
 
-Try the **Included revision** and **Needs clarity** examples to see the other outcomes.
+**1. Your client asks for something extra.**
+Sofia messages you: *"Could we add a page where customers can book a cake tasting?"* Is that in the deal, or is it new paid work?
+→ In ScopePay, go to **Client requests → New request**, pick **Bloom Bakery**, click the **Extra feature** example (or paste the message yourself) and review it.
+
+**2. ScopePay checks it against your agreed scope.**
+It marks the request **Additional work** and shows the exact scope sentence that proves it: booking was explicitly excluded.
+→ Click **Prepare proposal**.
+
+**3. You price the extra work.**
+The hours and extra days are already filled in, and the price is worked out from your hourly rate. Adjust anything you disagree with.
+→ Click **Save**, then go to **Proposals → Share with client**.
+
+**4. You send Sofia a private link.**
+In real life you'd email or message her this link. For the demo:
+→ Click **Client link** to open her page.
+
+**5. Now you're Sofia.**
+She sees what the change is, what it costs and the new delivery date, plus a timeline with the new work **locked until payment**.
+→ Tick the agreement box and click **Approve**.
+
+**6. She pays.**
+With PayPal connected, Sofia would pay through PayPal Checkout right here. In the demo:
+→ Back in your **Proposals**, click **Simulate demo payment**.
+
+**7. The work unlocks.**
+→ Open **Timeline**. The paid change is now on the Gantt chart and the deadline has moved. You never started work you weren't paid for.
+
+Want to see the other outcomes? Try the **Included revision** example (covered by the deal, so no charge) and **Needs clarity** (ScopePay drafts a question to send back to the client).
 
 ## Connect real services (optional)
 
