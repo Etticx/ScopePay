@@ -25,6 +25,8 @@ export default function ProposalForm({
   const extra = additional.length ? additional : request.items.filter((i) => i.classification === "clarify");
   const [hours, setHours] = useState(proposal?.hours || extra.reduce((sum, i) => sum + i.hours, 0) || 1);
   const [rate, setRate] = useState(proposal?.rate || project.rate);
+  const estimatedDays = extra.some((i) => i.days !== undefined) ? extra.reduce((sum, i) => sum + (i.days || 0), 0) : undefined;
+  const suggested = !proposal && extra.some((i) => i.hours > 0 || i.days !== undefined);
   return (
     <form
       onSubmit={(e) => {
@@ -65,9 +67,14 @@ export default function ProposalForm({
         </label>
         <label className="field span-two">
           <span>Extra days</span>
-          <input type="number" name="extraDays" defaultValue={proposal?.extraDays ?? 2} min="0" max="180" required />
+          <input type="number" name="extraDays" defaultValue={proposal?.extraDays ?? Math.min(estimatedDays ?? 2, 180)} min="0" max="180" required />
         </label>
       </div>
+      {suggested && (
+        <p className="muted small">
+          {estimatedDays === undefined ? "Hours are" : "Hours and extra days are"} {request.engine === "groq" ? "AI estimates." : "sample estimates, not AI."} Price is hours × your rate. Check before sharing.
+        </p>
+      )}
       <div className="quote-total">
         <span>Total</span>
         <strong>{money(Math.round(hours * Math.round(rate * 100)))}</strong>

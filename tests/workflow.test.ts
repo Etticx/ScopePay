@@ -86,3 +86,14 @@ test("a paid change held for review can be placed after the current schedule, on
   assert.equal(project.deadline, addDays("2099-01-01", p.extraDays)); assert.equal(p.deadline, project.deadline); assert.equal(p.scheduleReview, false);
   assert.throws(() => scheduleReviewed(w, p), /held for review/);
 });
+test("AI day estimates only count for additional work", () => {
+  const scope = "Online ordering and appointment booking are explicitly excluded from this website.";
+  const [extra, included] = validateEvidence([
+    { title: "Booking", classification: "additional", reason: "Excluded", evidence: "appointment booking are explicitly excluded", question: "", hours: 6, days: 4 },
+    { title: "Ordering", classification: "included", reason: "Agreed", evidence: "Online ordering and appointment booking", question: "", hours: 3, days: 2 },
+  ], scope);
+  assert.equal(extra.days, 4); assert.equal(included.days, 0); assert.equal(included.hours, 0);
+  const invented = validateEvidence([{ title: "Booking", classification: "additional", reason: "Excluded", evidence: "Invented clause", question: "", hours: 6, days: 4 }], scope);
+  assert.equal(invented[0].days, 0);
+  assert.equal(demoAnalysis(seed().projects[0].scope, "Add appointment booking")[0].days, 3);
+});
