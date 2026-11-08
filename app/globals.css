@@ -15,6 +15,13 @@
 .timeline-caption,.client-footnote,.client-footer,.check-label,.proposal-facts small,.project-meta,.scope-meta,.evidence p,.evidence>span{color:#66705f}
 .client-footer span{color:#4f6545}
 .legend-line{background:#7d9cb8}.green-line{background:#34664c}.gray-line{background:#b9bfb6}.amber-line{background:#c98a3d}
+/* Keep the review's next step beside the analysis on laptops, and in view while scrolling. */
+@media(min-width:861px){.review-layout{grid-template-columns:minmax(0,1fr) 240px}.review-layout>aside{display:block;position:sticky;top:24px;align-self:start}.review-layout>aside .scope-details{margin-top:15px}}
+/* Contrast fixes measured against WCAG AA (4.5:1). */
+.nav-item{color:#5f6b62}.nav-count{color:#4a6a40}.breadcrumb{color:#5a6758}.mode-pill{color:#5f6f52}.mode-pill.connected{color:#3f6a49}
+.lavender,.request-row .badge.lavender{color:#6f5592}.clarification p{color:#7a5f2c}.clarification .text-button{color:#3f6a49}
+/* Larger hit areas for small text actions. */
+.back-button,.clarification .text-button{min-height:36px;padding:8px 0}.scope-details summary{min-height:32px}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition:none!important;scroll-behavior:auto!important}}
 
 /* A quieter workspace: concise navigation and flat overview lists. */

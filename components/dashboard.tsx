@@ -326,7 +326,7 @@ export default function Dashboard() {
           <MessageSquare size={18} />
         </span>
         <div className="request-row-copy">
-          <strong>{r.items.length > 1 ? `${r.items.length} changes in one request` : r.items[0]?.title || "Client request"}</strong>
+          <strong>{r.items.map((item) => item.title).join(" + ") || "Client request"}</strong>
           <span className="muted small">{p?.name}</span>
         </div>
         <span
@@ -556,7 +556,7 @@ export default function Dashboard() {
                   <h1>{selectedRequest ? "Request review" : "Client requests"}</h1>
                 </div>
                 <button
-                  className="button primary"
+                  className={`button ${selectedRequest ? "secondary" : "primary"}`}
                   onClick={() => {
                     setMessage("");
                     setRequestModal(true);
