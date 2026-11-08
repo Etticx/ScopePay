@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { ownerGuard, integrationStatus } from "@/lib/auth";
 import { snapshot, transaction } from "@/lib/store";
-import { amountCents, addDays, activatePaid } from "@/lib/domain";
+import { amountCents, addDays, activatePaid, scheduleReviewed } from "@/lib/domain";
 import { ensurePayment, confirmPayment } from "@/lib/checkout";
 import type { Proposal } from "@/lib/types";
 
@@ -41,6 +41,8 @@ export async function POST(request: Request) {
         w.activity.unshift({ id: randomUUID(), text: `Proposal ready for client · ${p.title}`, at: new Date().toISOString(), kind: "proposal" });
         return p;
       });
+    } else if (data.action === "scheduleReviewed") {
+      await transaction(w => { const p = w.proposals.find(p => p.id === data.id); if (!p) throw new Error("Proposal not found."); scheduleReviewed(w, p); });
     } else if (data.action === "preparePayment") {
       await ensurePayment(z.string().parse(data.id), process.env.APP_URL || new URL(request.url).origin);
     } else if (data.action === "simulatePayment" || data.action === "checkPayment") {

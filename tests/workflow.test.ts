@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { seed } from "../lib/seed";
-import { activatePaid, addDays, amountCents, lockedTasks, projectContext } from "../lib/domain";
+import { activatePaid, addDays, amountCents, lockedTasks, projectContext, scheduleReviewed } from "../lib/domain";
 import { demoAnalysis, validateEvidence } from "../lib/analysis";
 import type { Proposal } from "../lib/types";
 
@@ -15,6 +15,7 @@ test("prices use integer cents and reject invalid amounts", () => {
   assert.equal(amountCents(1.25, 49.99), 6249);
   assert.throws(() => amountCents(-1, 50));
   assert.throws(() => amountCents(NaN, 50));
+  assert.throws(() => amountCents(0.25, 0.01), /at least/);
 });
 test("paid change activates exactly once, even when a different event repeats it", () => {
   const { w, p } = fixture(); const tasks = w.projects[0].tasks.length;
@@ -75,4 +76,13 @@ test("a paid change with no extension finishes on the existing deadline", () => 
   activatePaid(w, p, "event");
   const task = w.projects[0].tasks.at(-1)!;
   assert.equal(addDays(task.start, task.days), deadline); assert.equal(w.projects[0].deadline, deadline);
+});
+test("a paid change held for review can be placed after the current schedule, once", () => {
+  const { w, p } = fixture(); const project = w.projects[0];
+  activatePaid(w, p, "event", "2099-01-01");
+  scheduleReviewed(w, p, "2099-01-01");
+  const task = project.tasks.at(-1)!;
+  assert.equal(task.proposalId, p.id); assert.equal(task.start, "2099-01-01");
+  assert.equal(project.deadline, addDays("2099-01-01", p.extraDays)); assert.equal(p.deadline, project.deadline); assert.equal(p.scheduleReview, false);
+  assert.throws(() => scheduleReviewed(w, p), /held for review/);
 });

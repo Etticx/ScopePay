@@ -2,7 +2,9 @@ import type { Project, Proposal, Task, Workspace } from "./types";
 
 export function amountCents(hours: number, rate: number) {
   if (!Number.isFinite(hours) || !Number.isFinite(rate) || hours <= 0 || rate <= 0) throw new Error("Enter positive hours and an hourly rate.");
-  return Math.round(hours * Math.round(rate * 100));
+  const cents = Math.round(hours * Math.round(rate * 100));
+  if (cents < 1) throw new Error("The total must be at least $0.01.");
+  return cents;
 }
 export function addDays(date: string, days: number) {
   const value = new Date(`${date}T12:00:00Z`);
@@ -49,4 +51,16 @@ export function activatePaid(workspace: Workspace, proposal: Proposal, eventId: 
   workspace.events.push(eventId);
   workspace.activity.unshift({ id: eventId, text: `${proposal.mode === "demo" ? "Demo payment simulated" : "PayPal sandbox payment verified"} · ${proposal.title}${proposal.scheduleReview ? " · Schedule needs review" : ""}`, at: new Date().toISOString(), kind: "payment" });
   return true;
+}
+// The owner places a paid change held for review after the current schedule (or today, if that has passed).
+export function scheduleReviewed(workspace: Workspace, proposal: Proposal, today = new Date().toISOString().slice(0, 10)) {
+  if (proposal.status !== "paid" || !proposal.scheduleReview) throw new Error("Only a paid change held for review can be scheduled.");
+  const project = workspace.projects.find(p => p.id === proposal.projectId);
+  if (!project) throw new Error("Project not found.");
+  const base = project.deadline > today ? project.deadline : today;
+  proposal.deadline = addDays(base, proposal.extraDays);
+  project.tasks.push(changeTask({ deadline: base, tasks: project.tasks }, proposal));
+  project.deadline = proposal.deadline;
+  proposal.scheduleReview = false;
+  workspace.activity.unshift({ id: `schedule-${proposal.id}`, text: `Paid change scheduled · ${proposal.title}`, at: new Date().toISOString(), kind: "payment" });
 }

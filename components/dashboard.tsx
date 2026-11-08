@@ -704,7 +704,24 @@ export default function Dashboard() {
                           <span>{p.clientNote}</span>
                         </div>
                       )}
-                      {p.scheduleReview && <div className="notice">Paid. Schedule needs review.</div>}
+                      {p.scheduleReview && (
+                        <div className="notice">
+                          <span>Paid. The schedule changed after this was priced, so it is not on the timeline yet.</span>
+                          <button
+                            className="text-button"
+                            disabled={busy}
+                            onClick={() =>
+                              run(async () => {
+                                await action({ action: "scheduleReviewed", id: p.id });
+                                await load();
+                                setToast("Added to the end of the timeline.");
+                              })
+                            }
+                          >
+                            Add to end of timeline
+                          </button>
+                        </div>
+                      )}
                       {proposalButtons(p)}
                     </div>
                   ))}
