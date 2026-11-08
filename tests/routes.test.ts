@@ -4,6 +4,7 @@ import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { seed } from "../lib/seed";
+import { addDays } from "../lib/domain";
 import { sameOrigin, sessionValue, validSession } from "../lib/auth";
 import type { Proposal } from "../lib/types";
 
@@ -17,7 +18,7 @@ async function setup() {
   // The store resolves DATA_DIR at import time. Import only AFTER isolating it.
   process.env.DATA_DIR ||= await mkdtemp(path.join(tmpdir(), "scopepay-routes-"));
   const { snapshot, transaction } = await import("../lib/store");
-  const proposal: Proposal = { id: "route-test", projectId: "p-bloom", requestId: "r-sample", title: "Booking", description: "Fictional route test", hours: 1, rate: 1, totalCents: 100, extraDays: 1, deadline: "2099-01-01", status: "shared", version: 2, token: "route-token", mode: "demo", createdAt: new Date().toISOString() };
+  const proposal: Proposal = { id: "route-test", projectId: "p-bloom", requestId: "r-sample", title: "Booking", description: "Fictional route test", hours: 1, rate: 1, totalCents: 100, extraDays: 1, deadline: addDays(seed().projects[0].deadline, 1), status: "shared", version: 2, token: "route-token", mode: "demo", createdAt: new Date().toISOString() };
   await transaction(w => { Object.assign(w, seed()); w.proposals.push(proposal); });
   return { snapshot, transaction };
 }
@@ -53,6 +54,15 @@ test("a client can only answer the current version, and only once", async () => 
   assert.equal((await POST(post({ decision: "approve", version: 2 }), params("route-token"))).status, 200);
   assert.equal((await snapshot()).proposals.find(p => p.id === "route-test")?.status, "approved");
   assert.equal((await POST(post({ decision: "decline", version: 2 }), params("route-token"))).status, 400);
+});
+test("a client cannot approve a delivery date the schedule has moved past", async () => {
+  const { snapshot, transaction } = await setup();
+  await transaction(w => { w.proposals.find(p => p.id === "route-test")!.deadline = "2000-01-01"; });
+  const { POST } = await import("../app/api/client/[token]/route");
+  const response = await POST(post({ decision: "approve", version: 2 }), params("route-token"));
+  assert.equal(response.status, 400); assert.match((await response.json()).error, /out of date/);
+  assert.equal((await snapshot()).proposals.find(p => p.id === "route-test")?.status, "shared");
+  assert.equal((await POST(post({ decision: "revise", version: 2, note: "Please update the date" }), params("route-token"))).status, 200);
 });
 test("the client page hides the private token", async () => {
   await setup();

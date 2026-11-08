@@ -2,6 +2,7 @@ import { z } from "zod";
 import { snapshot, transaction } from "@/lib/store";
 import { sameOrigin } from "@/lib/auth";
 import { ensurePayment } from "@/lib/checkout";
+import { scheduleStale } from "@/lib/domain";
 type Context = { params: Promise<{ token: string }> };
 export async function GET(_request: Request, context: Context) {
   const { token } = await context.params;
@@ -20,6 +21,9 @@ export async function POST(request: Request, context: Context) {
     const id = await transaction(w => {
       const p = w.proposals.find(p => p.token === token);
       if (!p || p.status !== "shared" || p.version !== input.version) throw new Error("This proposal has already been answered or revised. Refresh to see its current status.");
+      // Approving a delivery date the schedule has already moved past would leave paid work unscheduled.
+      const project = w.projects.find(project => project.id === p.projectId);
+      if (input.decision === "approve" && (!project || scheduleStale(project, p))) throw new Error("This delivery date is out of date because the project schedule changed. Please request a revision so the freelancer can send an updated date.");
       p.status = input.decision === "approve" ? "approved" : input.decision === "decline" ? "declined" : "revision_requested";
       p.clientNote = input.note;
       if (input.decision === "approve") p.approvedAt = new Date().toISOString();
