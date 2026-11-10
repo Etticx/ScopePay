@@ -81,6 +81,14 @@ With PayPal connected, Sofia would pay through PayPal Checkout right here. In th
 
 Want to see the other outcomes? Try the **Included revision** example (covered by the deal, so no charge) and **Needs clarity** (ScopePay drafts a question to send back to the client).
 
+## Tools and how they are used
+
+| Tool | What it does in ScopePay |
+|---|---|
+| **Groq** (model `qwen/qwen3.8-27b`, changeable with `GROQ_MODEL`) | Reads the client's message next to the agreed scope, splits it into items, labels each one Included, Additional work or Needs clarity, quotes the scope sentence it relied on, and estimates hours and extra days. ScopePay then checks every quote really appears in the scope ([lib/analysis.ts](lib/analysis.ts)). |
+| **PayPal Checkout and Orders API** (Sandbox) | Creates the order when the client approves, captures the payment, and confirms it on the server (and by webhook) before any work is unlocked ([lib/paypal.ts](lib/paypal.ts), [lib/checkout.ts](lib/checkout.ts)). |
+| **Bryntum Gantt** | The project timeline for both freelancer and client. Agreed tasks, a payment milestone and the proposed extra work are Gantt tasks linked by dependencies. Unpaid work shows greyed out with a lock icon behind the payment milestone; once PayPal confirms payment it becomes a scheduled task and the deadline moves ([components/timeline.tsx](components/timeline.tsx)). |
+
 ## Connect real services (optional)
 
 Copy `.env.example` to `.env.local`, fill in what you need, and restart.
