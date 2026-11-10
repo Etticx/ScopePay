@@ -4,6 +4,12 @@
 
 Built for the PayPal AI Hackathon with Groq, PayPal Checkout (Sandbox) and Bryntum Gantt.
 
+## Demo video
+
+[![Watch the ScopePay demo (1.5 min)](https://img.youtube.com/vi/NbjMYg0ljls/hqdefault.jpg)](https://youtu.be/NbjMYg0ljls)
+
+**[Watch the 90-second demo on YouTube](https://youtu.be/NbjMYg0ljls)**
+
 ## How it works
 
 1. **Review a request.** Paste a client message. AI checks it against the agreed scope and marks each item **Included**, **Additional work** or **Needs clarity**, quoting the exact scope sentence it relied on.
