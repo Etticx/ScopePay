@@ -15,7 +15,7 @@ No keys are needed to try it: without them ScopePay runs a clearly labelled demo
 
 ## Quick start
 
-Requires **Node.js 20.9+** (22 recommended).
+You need [Git](https://git-scm.com/downloads), [Node.js](https://nodejs.org) **20.9 or newer** (22 recommended; check with `node -v`) and an internet connection for the install. Works on Windows, macOS and Linux. No accounts, API keys or database are needed.
 
 ```sh
 git clone https://github.com/Etticx/ScopePay.git
@@ -24,7 +24,11 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:3000. Sample projects are created on first launch and saved in `.data/workspace.json` (delete it to reset).
+Open http://127.0.0.1:3000 (use this exact address, not `localhost`). Sample projects are created on first launch and saved in `.data/workspace.json` (delete it to reset).
+
+`npm install` takes about a minute and ends with `Bryntum evaluation assets prepared`: that is the Gantt chart being copied into place.
+
+Use `npm run dev` to try the app. `npm start` is the hosted mode: it asks for a sign-in and needs `APP_PASSWORD` and `SESSION_SECRET` set first (see [Hosting](#hosting)).
 
 <details>
 <summary>Port 3000 in use or blocked?</summary>
@@ -76,6 +80,14 @@ With PayPal connected, Sofia would pay through PayPal Checkout right here. In th
 → Open **Timeline**. The paid change is now on the Gantt chart and the deadline has moved. You never started work you weren't paid for.
 
 Want to see the other outcomes? Try the **Included revision** example (covered by the deal, so no charge) and **Needs clarity** (ScopePay drafts a question to send back to the client).
+
+## Tools and how they are used
+
+| Tool | What it does in ScopePay |
+|---|---|
+| **Groq** (model `qwen/qwen3.8-27b`, changeable with `GROQ_MODEL`) | Reads the client's message next to the agreed scope, splits it into items, labels each one Included, Additional work or Needs clarity, quotes the scope sentence it relied on, and estimates hours and extra days. ScopePay then checks every quote really appears in the scope ([lib/analysis.ts](lib/analysis.ts)). |
+| **PayPal Checkout and Orders API** (Sandbox) | Creates the order when the client approves, captures the payment, and confirms it on the server (and by webhook) before any work is unlocked ([lib/paypal.ts](lib/paypal.ts), [lib/checkout.ts](lib/checkout.ts)). |
+| **Bryntum Gantt** | The project timeline for both freelancer and client. Agreed tasks, a payment milestone and the proposed extra work are Gantt tasks linked by dependencies. Unpaid work shows greyed out with a lock icon behind the payment milestone; once PayPal confirms payment it becomes a scheduled task and the deadline moves ([components/timeline.tsx](components/timeline.tsx)). |
 
 ## Connect real services (optional)
 
